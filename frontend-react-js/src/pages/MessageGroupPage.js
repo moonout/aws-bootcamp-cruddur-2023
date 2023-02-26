@@ -2,7 +2,7 @@ import './MessageGroupPage.css';
 import React from "react";
 import { useParams } from 'react-router-dom';
 
-import DesktopNavigation  from '../components/DesktopNavigation';
+import DesktopNavigation from '../components/DesktopNavigation';
 import MessageGroupFeed from '../components/MessageGroupFeed';
 import MessagesFeed from '../components/MessageFeed';
 import MessagesForm from '../components/MessageForm';
@@ -33,7 +33,7 @@ export default function MessageGroupPage() {
     } catch (err) {
       console.log(err);
     }
-  };  
+  };
 
   const loadMessageGroupData = async () => {
     try {
@@ -51,7 +51,7 @@ export default function MessageGroupPage() {
     } catch (err) {
       console.log(err);
     }
-  };  
+  };
 
   const checkAuth = async () => {
     console.log('checkAuth')
@@ -64,7 +64,7 @@ export default function MessageGroupPage() {
     }
   };
 
-  React.useEffect(()=>{
+  React.useEffect(() => {
     //prevents double call
     if (dataFetchedRef.current) return;
     dataFetchedRef.current = true;
@@ -75,7 +75,7 @@ export default function MessageGroupPage() {
   }, [])
   return (
     <article>
-      <DesktopNavigation user={user} active={'home'} setPopped={setPopped} />
+      <DesktopNavigation user={user} active={'messages'} setPopped={setPopped} />
       <section className='message_groups'>
         <MessageGroupFeed message_groups={messageGroups} />
       </section>
