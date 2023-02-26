@@ -1,14 +1,15 @@
 FROM node:16.18
-
-WORKDIR /node
-COPY package.json package-lock.json ./
-
-RUN npm ci
-
-WORKDIR /node/app
-COPY . .
-
+ENV PORT=3000
 EXPOSE ${PORT}
 
-ENV PORT=3000
-CMD ["npm", "start"]
+
+WORKDIR /frontend-react-js
+COPY package.json .
+RUN npm install
+
+
+RUN mkdir -p node_modules/.cache && chmod -R 777 node_modules/.cache
+
+COPY . .
+
+CMD ["npm", "run", "start"]
