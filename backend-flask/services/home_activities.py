@@ -6,6 +6,46 @@ tracer = trace.get_tracer("home.activities")
 
 class HomeActivities:
     def run():
+        # # Start a segment
+        # segment = xray_recorder.begin_segment("segment_name_new")
+        # # segment = xray_recorder.current_segment()
+        # # Start a subsegment
+        # subsegment = xray_recorder.begin_subsegment("subsegment_name_new")
+
+        # # Add metadata or annotation here if necessary
+        # segment.put_metadata("key", dict, "namespace")
+        # subsegment.put_annotation("key", "value123")
+        # segment.put_annotation("key", "aaaaaaaaaaaaa")
+        # xray_recorder.end_subsegment()
+
+        # # # Close the segment
+        # xray_recorder.end_segment()
+
+        # document = xray_recorder.current_segment()
+        # document.put_metadata("my key", "my value")
+        # document.put_annotation("key", "aaaaa!")
+
+        # print("===================1")
+        # # Start a segment
+        # segment = xray_recorder.begin_segment("segment_name")
+        # print("===================2")
+        # # Start a subsegment
+        # subsegment = xray_recorder.begin_subsegment("subsegment_name")
+        # print("===================3")
+
+        # # Add metadata or annotation here if necessary
+        # print("===================4")
+        # segment.put_metadata("key", dict, "namespace")
+        # print("===================5")
+        # subsegment.put_annotation("key", "value")
+        # print("===================6")
+
+        # xray_recorder.end_subsegment()
+        # print("===================7")
+
+        # # # Close the segment
+        # xray_recorder.end_segment()
+
         with tracer.start_as_current_span("mock-data"):
             now = datetime.now(timezone.utc).astimezone()
             span = trace.get_current_span()

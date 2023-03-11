@@ -1,8 +1,18 @@
 from datetime import datetime, timedelta, timezone
+from aws_xray_sdk.core import xray_recorder
 
 
 class UserActivities:
     def run(user_handle):
+        # segment = xray_recorder.begin_segment("segment_name")
+        # # Start a subsegment
+        # subsegment = xray_recorder.begin_subsegment("subsegment_name")
+
+        # # Add metadata or annotation here if necessary
+        # segment.put_metadata("key", dict, "namespace")
+        # subsegment.put_annotation("key", "value")
+        # xray_recorder.end_subsegment()
+
         model = {"errors": None, "data": None}
 
         now = datetime.now(timezone.utc).astimezone()
@@ -21,4 +31,16 @@ class UserActivities:
                 }
             ]
             model["data"] = results
+
+        subsegment = xray_recorder.begin_subsegment("mock-data")
+        # xray ---
+        data = {"now": now.isoformat(), "results-size": len(model["data"])}
+        subsegment.put_annotation("data", data)
+        subsegment.put_metadata("meta-data", data)
+
+        document = xray_recorder.current_segment()
+        document.put_annotation("annot", "some annot")
+
+        xray_recorder.end_subsegment()
+
         return model

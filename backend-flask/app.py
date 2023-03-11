@@ -3,6 +3,7 @@ from flask import request
 from flask_cors import CORS, cross_origin
 import os
 
+# these imports are ugly as fuck
 from services.home_activities import *
 from services.user_activities import *
 from services.create_activity import *
@@ -21,14 +22,17 @@ from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExport
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor, SimpleSpanProcessor, ConsoleSpanExporter
 
+from aws_xray_sdk.core import xray_recorder
+from aws_xray_sdk.ext.flask.middleware import XRayMiddleware
+
 # Initialize tracing and an exporter that can send data to Honeycomb
 provider = TracerProvider()
 
 processor = BatchSpanProcessor(OTLPSpanExporter())
 provider.add_span_processor(processor)
 
-simple_processor = SimpleSpanProcessor(ConsoleSpanExporter())
-provider.add_span_processor(simple_processor)
+# simple_processor = SimpleSpanProcessor(ConsoleSpanExporter())
+# provider.add_span_processor(simple_processor)
 
 trace.set_tracer_provider(provider)
 tracer = trace.get_tracer(__name__)
@@ -37,6 +41,10 @@ tracer = trace.get_tracer(__name__)
 app = Flask(__name__)
 FlaskInstrumentor().instrument_app(app)
 RequestsInstrumentor().instrument()
+
+xray_url = os.getenv("AWS_XRAY_URL")
+xray_recorder.configure(service="backend-flask", dynamic_naming=xray_url)
+XRayMiddleware(app, xray_recorder)
 
 frontend = os.getenv("FRONTEND_URL")
 backend = os.getenv("BACKEND_URL")
@@ -91,6 +99,7 @@ def data_create_message():
 
 
 @app.route("/api/activities/home", methods=["GET"])
+@xray_recorder.capture("activities-home")
 def data_home():
     data = HomeActivities.run()
     return data, 200
@@ -103,6 +112,7 @@ def data_notifications():
 
 
 @app.route("/api/activities/@<string:handle>", methods=["GET"])
+@xray_recorder.capture("activities-user")
 def data_handle(handle):
     model = UserActivities.run(handle)
     if model["errors"] is not None:
