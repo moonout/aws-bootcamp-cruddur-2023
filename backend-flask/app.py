@@ -29,6 +29,10 @@ import watchtower
 import logging
 import time
 
+import rollbar
+import rollbar.contrib.flask
+from flask import got_request_exception
+
 # Initialize tracing and an exporter that can send data to Honeycomb
 provider = TracerProvider()
 
@@ -67,6 +71,23 @@ cors = CORS(
     allow_headers="content-type,if-modified-since",
     methods="OPTIONS,GET,HEAD,POST",
 )
+
+# Rollbar
+rollbar_access_token = os.getenv("ROLLBAR_ACCESS_TOKEN")
+
+
+@app.before_first_request
+def init_rollbar():
+    """init rollbar module"""
+    rollbar.init(
+        rollbar_access_token,  # access token
+        "production",  # environment name
+        root=os.path.dirname(os.path.realpath(__file__)),  # server root directory, makes tracebacks prettier
+        allow_logging_basic_config=False,  # flask already sets up logging
+    )
+
+    # send exceptions from `app` to rollbar, using flask's signal system.
+    got_request_exception.connect(rollbar.contrib.flask.report_exception, app)
 
 
 @app.after_request
