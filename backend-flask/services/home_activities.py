@@ -1,14 +1,11 @@
 from datetime import datetime, timedelta, timezone
 from opentelemetry import trace
-import rollbar
 
 tracer = trace.get_tracer("home.activities")
 
 
 class HomeActivities:
-    def run(app):
-        app.logger.info("HomeActivities")
-
+    def run():
         with tracer.start_as_current_span("mock-data"):
             now = datetime.now(timezone.utc).astimezone()
             span = trace.get_current_span()
@@ -57,5 +54,4 @@ class HomeActivities:
                 },
             ]
             span.set_attribute("app.result.len", len(results))
-            rollbar.report_message("HomeActivities", level="debug", extra_data={"data_len": len(results)})
         return results

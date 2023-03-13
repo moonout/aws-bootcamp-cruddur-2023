@@ -22,17 +22,6 @@ from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExport
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor, SimpleSpanProcessor, ConsoleSpanExporter
 
-from aws_xray_sdk.core import xray_recorder
-from aws_xray_sdk.ext.flask.middleware import XRayMiddleware
-
-import watchtower
-import logging
-import time
-
-import rollbar
-import rollbar.contrib.flask
-from flask import got_request_exception
-
 # Initialize tracing and an exporter that can send data to Honeycomb
 provider = TracerProvider()
 
@@ -50,16 +39,6 @@ app = Flask(__name__)
 FlaskInstrumentor().instrument_app(app)
 RequestsInstrumentor().instrument()
 
-xray_url = os.getenv("AWS_XRAY_URL")
-xray_recorder.configure(service="backend-flask", dynamic_naming=xray_url)
-XRayMiddleware(app, xray_recorder)
-
-# cloudwatch
-console_handler = logging.StreamHandler()
-cw_handler = watchtower.CloudWatchLogHandler(log_group_name="cruddur")
-app.logger.addHandler(cw_handler)
-app.logger.addHandler(console_handler)
-
 
 frontend = os.getenv("FRONTEND_URL")
 backend = os.getenv("BACKEND_URL")
@@ -74,35 +53,6 @@ cors = CORS(
 
 # Rollbar
 rollbar_access_token = os.getenv("ROLLBAR_ACCESS_TOKEN")
-
-
-@app.before_first_request
-def init_rollbar():
-    """init rollbar module"""
-    rollbar.init(
-        rollbar_access_token,  # access token
-        "production",  # environment name
-        root=os.path.dirname(os.path.realpath(__file__)),  # server root directory, makes tracebacks prettier
-        allow_logging_basic_config=False,  # flask already sets up logging
-    )
-
-    # send exceptions from `app` to rollbar, using flask's signal system.
-    got_request_exception.connect(rollbar.contrib.flask.report_exception, app)
-
-
-@app.after_request
-def after_request(response):
-    timestamp = time.strftime("[%Y-%b-%d %H:%M]")
-    app.logger.info(
-        "After request %s %s %s %s %s %s",
-        timestamp,
-        request.remote_addr,
-        request.method,
-        request.scheme,
-        request.full_path,
-        response.status,
-    )
-    return response
 
 
 @app.route("/api/message_groups", methods=["GET"])
@@ -146,9 +96,8 @@ def data_create_message():
 
 
 @app.route("/api/activities/home", methods=["GET"])
-@xray_recorder.capture("activities-home")
 def data_home():
-    data = HomeActivities.run(app)
+    data = HomeActivities.run()
     return data, 200
 
 
@@ -159,7 +108,6 @@ def data_notifications():
 
 
 @app.route("/api/activities/@<string:handle>", methods=["GET"])
-@xray_recorder.capture("activities-user")
 def data_handle(handle):
     model = UserActivities.run(handle)
     if model["errors"] is not None:

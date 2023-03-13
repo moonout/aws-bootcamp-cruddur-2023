@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta, timezone
-from aws_xray_sdk.core import xray_recorder
 
 
 class UserActivities:
@@ -22,15 +21,5 @@ class UserActivities:
                 }
             ]
             model["data"] = results
-
-        subsegment = xray_recorder.begin_subsegment("mock-data")
-        # xray ---
-        data = {"now": now.isoformat(), "results-size": len(model["data"])}
-        subsegment.put_annotation("data", str(data))
-
-        document = xray_recorder.current_segment()
-        document.put_annotation("annotation", "some annotation")
-
-        xray_recorder.end_subsegment()
 
         return model
