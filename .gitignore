@@ -1,2 +1,7 @@
 docker/
 .env
+.env.save
+..env.swp
+.env.*
+
+

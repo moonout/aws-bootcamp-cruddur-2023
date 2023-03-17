@@ -1,11 +1,13 @@
 import './HomeFeedPage.css';
 import React from "react";
 
-import DesktopNavigation  from '../components/DesktopNavigation';
-import DesktopSidebar     from '../components/DesktopSidebar';
+import DesktopNavigation from '../components/DesktopNavigation';
+import DesktopSidebar from '../components/DesktopSidebar';
 import ActivityFeed from '../components/ActivityFeed';
 import ActivityForm from '../components/ActivityForm';
 import ReplyForm from '../components/ReplyForm';
+
+import { Auth } from 'aws-amplify'
 
 // [TODO] Authenication
 import Cookies from 'js-cookie'
@@ -17,6 +19,7 @@ export default function HomeFeedPage() {
   const [replyActivity, setReplyActivity] = React.useState({});
   const [user, setUser] = React.useState(null);
   const dataFetchedRef = React.useRef(false);
+
 
   const loadData = async () => {
     try {
@@ -35,18 +38,28 @@ export default function HomeFeedPage() {
     }
   };
 
+
+  // check if we are authenticated
   const checkAuth = async () => {
-    console.log('checkAuth')
-    // [TODO] Authenication
-    if (Cookies.get('user.logged_in')) {
-      setUser({
-        display_name: Cookies.get('user.name'),
-        handle: Cookies.get('user.username')
+    Auth.currentAuthenticatedUser({
+      // Optional, By default is false.
+      // If set to true, this call will send a
+      // request to Cognito to get the latest user data
+      bypassCache: false
+    })
+      .then((user) => {
+        console.log('user', user);
+        return Auth.currentAuthenticatedUser()
+      }).then((cognito_user) => {
+        setUser({
+          display_name: cognito_user.attributes.name,
+          handle: cognito_user.attributes.preferred_username
+        })
       })
-    }
+      .catch((err) => console.log(err));
   };
 
-  React.useEffect(()=>{
+  React.useEffect(() => {
     //prevents double call
     if (dataFetchedRef.current) return;
     dataFetchedRef.current = true;
@@ -59,23 +72,23 @@ export default function HomeFeedPage() {
     <article>
       <DesktopNavigation user={user} active={'home'} setPopped={setPopped} />
       <div className='content'>
-        <ActivityForm  
+        <ActivityForm
           popped={popped}
-          setPopped={setPopped} 
-          setActivities={setActivities} 
+          setPopped={setPopped}
+          setActivities={setActivities}
         />
-        <ReplyForm 
-          activity={replyActivity} 
-          popped={poppedReply} 
-          setPopped={setPoppedReply} 
-          setActivities={setActivities} 
-          activities={activities} 
+        <ReplyForm
+          activity={replyActivity}
+          popped={poppedReply}
+          setPopped={setPoppedReply}
+          setActivities={setActivities}
+          activities={activities}
         />
-        <ActivityFeed 
-          title="Home" 
-          setReplyActivity={setReplyActivity} 
-          setPopped={setPoppedReply} 
-          activities={activities} 
+        <ActivityFeed
+          title="Home"
+          setReplyActivity={setReplyActivity}
+          setPopped={setPoppedReply}
+          activities={activities}
         />
       </div>
       <DesktopSidebar user={user} />
