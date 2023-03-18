@@ -72,11 +72,15 @@ class TokenVerification:
 
     def _extract_token_from_header(self):
         auth_header = request.headers.get("Authorization")
+        if not auth_header:
+            return None
         _, token = auth_header.split(" ")
         return token
 
     def verify(self) -> Dict:
         token = self._extract_token_from_header()
+        if not token or token == "null":
+            return
         app.logger.debug("TOKEN")
         app.logger.debug(token)
         try:

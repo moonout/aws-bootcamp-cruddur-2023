@@ -1,8 +1,21 @@
-* { box-sizing: border-box; }
-html,body { 
-  height: 100%; 
-  width: 100%; 
-  background: rgb(14,3,28);
+:root {
+  --bg: rgb(61, 13, 128);
+  --fg: rgba(8, 1, 14, 0.68);
+  --field-border: rgba(255, 255, 255, 0.35);
+  --field-border-focus: rgb(149, 0, 255, 1);
+  --field-bg: rgba(31, 31, 31, 0.9);
+}
+
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  width: 100%;
+  background: var(--bg);
 }
 
 body {
