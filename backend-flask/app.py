@@ -2,6 +2,7 @@ from flask import Flask
 from flask import request
 from flask_cors import CORS, cross_origin
 import os
+from typing import Dict
 
 # these imports are ugly as fuck
 from services.home_activities import *
@@ -21,6 +22,8 @@ from opentelemetry.instrumentation.requests import RequestsInstrumentor
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor, SimpleSpanProcessor, ConsoleSpanExporter
+
+import cognitojwt
 
 # Initialize tracing and an exporter that can send data to Honeycomb
 provider = TracerProvider()
@@ -43,16 +46,51 @@ RequestsInstrumentor().instrument()
 frontend = os.getenv("FRONTEND_URL")
 backend = os.getenv("BACKEND_URL")
 origins = [frontend, backend]
+
 cors = CORS(
     app,
     resources={r"/api/*": {"origins": origins}},
-    expose_headers="location,link",
-    allow_headers="content-type,if-modified-since",
+    headers=["Content-Type", "Authorization"],
+    expose_headers="Authorization",
+    # expose_headers="location,link",
+    # allow_headers="content-type,if-modified-since",
     methods="OPTIONS,GET,HEAD,POST",
 )
 
 # Rollbar
 rollbar_access_token = os.getenv("ROLLBAR_ACCESS_TOKEN")
+
+
+class TokenVerification:
+    header = "Authorization"
+
+    def __init__(self, app):
+        self.app = app
+        self.REGION = os.getenv("AWS_COGNITO_REGION")
+        self.USER_POOL_ID = os.getenv("AWS_USER_POOLS_ID")
+        self.APP_CLIENT_ID = os.getenv("APP_CLIENT_ID")
+
+    def _extract_token_from_header(self):
+        auth_header = request.headers.get("Authorization")
+        _, token = auth_header.split(" ")
+        return token
+
+    def verify(self) -> Dict:
+        token = self._extract_token_from_header()
+        app.logger.debug("TOKEN")
+        app.logger.debug(token)
+        try:
+            verified_claims = cognitojwt.decode(
+                token, self.REGION, self.USER_POOL_ID, self.APP_CLIENT_ID, testmode=False
+            )
+        except cognitojwt.exceptions.CognitoJWTException:
+            app.logger.debug("TOKEN expired")
+            return {}
+        app.logger.debug("Verified Claims")
+        app.logger.debug(verified_claims)
+
+
+token_verifier = TokenVerification(app)
 
 
 @app.route("/api/message_groups", methods=["GET"])
@@ -97,6 +135,11 @@ def data_create_message():
 
 @app.route("/api/activities/home", methods=["GET"])
 def data_home():
+    claims = token_verifier.verify()
+    if claims:
+        app.logger.debug("verified token")
+    else:
+        app.logger.debug("unverified token")
     data = HomeActivities.run()
     return data, 200
 

@@ -2,14 +2,17 @@ version: "3.8"
 services:
   backend-flask:
     environment:
-      FRONTEND_URL: "http://127.0.0.1:3000"
-      BACKEND_URL: "http://127.0.0.1:4567"
+      FRONTEND_URL: "http://localhost:3000"
+      BACKEND_URL: "http://localhost:4567"
       OTEL_SERVICE_NAME: "flask-backend"
       OTEL_EXPORTER_OTLP_ENDPOINT: "https://api.honeycomb.io"
       OTEL_EXPORTER_OTLP_HEADERS: "x-honeycomb-team=${HONEYCOMB_API_KEY}"
       AWS_DEFAULT_REGION: "${AWS_DEFAULT_REGION}"
       AWS_ACCESS_KEY_ID: "${AWS_ACCESS_KEY_ID}"
       AWS_SECRET_ACCESS_KEY: "${AWS_SECRET_ACCESS_KEY}"
+      AWS_COGNITO_REGION: "${AWS_DEFAULT_REGION}"
+      AWS_USER_POOLS_ID: "${REACT_APP_AWS_USER_POOLS_ID}"
+      APP_CLIENT_ID: "${REACT_APP_CLIENT_ID}"
     build: ./backend-flask
     ports:
       - "4567:4567"
@@ -17,7 +20,7 @@ services:
       - ./backend-flask:/backend-flask
   frontend-react-js:
     environment:
-      REACT_APP_BACKEND_URL: "http://127.0.0.1:4567"
+      REACT_APP_BACKEND_URL: "http://localhost:4567"
       REACT_APP_AWS_PROJECT_REGION: "${AWS_DEFAULT_REGION}"
       REACT_APP_AWS_COGNITO_REGION: "${AWS_DEFAULT_REGION}"
       REACT_APP_AWS_USER_POOLS_ID: "${REACT_APP_AWS_USER_POOLS_ID}"
