@@ -16,3 +16,7 @@ blinker
 rollbar
 
 cognitojwt
+
+psycopg[pool]
+psycopg[binary]
+
