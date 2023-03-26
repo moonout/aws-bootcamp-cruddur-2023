@@ -9,7 +9,7 @@ class CreateMessage:
             model["errors"] = ["user_sender_handle_blank"]
 
         if user_receiver_handle == None or len(user_receiver_handle) < 1:
-            model["errors"] = ["user_reciever_handle_blank"]
+            model["errors"] = ["user_receiver_handle_blank"]
 
         if message == None or len(message) < 1:
             model["errors"] = ["message_blank"]

@@ -1,7 +1,6 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from opentelemetry import trace
 from lib.db import pool
-from psycopg.rows import dict_row
 
 tracer = trace.get_tracer("home.activities")
 
@@ -33,7 +32,6 @@ class HomeActivities:
                 with conn.cursor() as cursor:
                     cursor.execute(sql)
                     results = cursor.fetchall()
-                    print(results)
 
             span.set_attribute("app.result.len", len(results))
-        return results
+            return results
