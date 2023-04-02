@@ -28,8 +28,6 @@ query_params = {
 # query the table
 response = ddb_client.query(**query_params)
 
-# print the items returned by the query
-# print(json.dumps(response, sort_keys=True, indent=2))
 
 print(json.dumps(response["ConsumedCapacity"], sort_keys=True, indent=2))
 

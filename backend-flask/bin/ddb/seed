@@ -119,9 +119,3 @@ for i, line in enumerate(get_conversations()):
         my_user_display_name=user["display_name"],
         my_user_handle=user["handle"],
     )
-    # print(line)
-    # print(message)
-    # exit()
-
-
-# response = ddb_client.create_table()
