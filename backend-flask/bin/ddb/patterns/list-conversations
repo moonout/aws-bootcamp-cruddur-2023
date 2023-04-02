@@ -1,0 +1,30 @@
+#!/usr/bin/env python
+
+import sys
+from datetime import datetime, timedelta, timezone
+import boto3
+import json
+
+MESSAGE_GROUP_UUID = "366a3727-4f86-4482-8229-979fa59b17ab"
+TABLE_NAME = "cruddur-messages"
+
+
+if len(sys.argv) == 2 and sys.argv[1] == "prod":
+    attrs = {}
+else:
+    attrs = {"endpoint_url": "http://localhost:8000"}
+ddb_client = boto3.client("dynamodb", **attrs)
+
+my_user_uuid = "136457e5-57a7-4cd5-9bf3-1fbaf1690cf6"
+query_params = {
+    "TableName": TABLE_NAME,
+    "KeyConditionExpression": "pk = :pkey",
+    "ExpressionAttributeValues": {":pkey": {"S": f"GRP#{my_user_uuid}"}},
+    "ReturnConsumedCapacity": "TOTAL",
+}
+
+response = ddb_client.query(**query_params)
+
+print(json.dumps(response["ConsumedCapacity"], sort_keys=True, indent=2))
+
+print(json.dumps(response["Items"], sort_keys=True, indent=2))

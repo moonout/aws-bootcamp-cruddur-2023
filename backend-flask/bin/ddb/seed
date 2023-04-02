@@ -1,0 +1,127 @@
+#!/usr/bin/env python
+
+import sys
+from datetime import datetime, timedelta, timezone
+import boto3
+from pathlib import Path
+import uuid
+
+p = Path(__file__).parent.parent.parent
+sys.path.append(p.as_posix())
+
+from lib.db import pool
+
+MESSAGE_GROUP_UUID = "366a3727-4f86-4482-8229-979fa59b17ab"
+TABLE_NAME = "cruddur-messages"
+
+
+def get_conversations():
+    p = Path(__file__).with_name("sample_conversations.txt")
+    with p.open("r") as f:
+        return f.read().strip().split("\n")
+
+
+def create_message(client, message_group_uuid, created_at, message, my_user_uuid, my_user_display_name, my_user_handle):
+    record = {
+        "pk": {"S": f"MSG#{message_group_uuid}"},
+        "sk": {"S": created_at},
+        "message_uuid": {"S": str(uuid.uuid4())},
+        "message": {"S": message},
+        "user_uuid": {"S": my_user_uuid},
+        "user_display_name": {"S": my_user_display_name},
+        "user_handle": {"S": my_user_handle},
+    }
+    # insert the record into the table
+    response = client.put_item(TableName=TABLE_NAME, Item=record)
+    print(response)
+
+
+def create_message_group(
+    client,
+    message_group_uuid,
+    my_user_uuid,
+    last_message_at=None,
+    message=None,
+    other_user_uuid=None,
+    other_user_display_name=None,
+    other_user_handle=None,
+):
+    record = {
+        "pk": {"S": f"GRP#{my_user_uuid}"},
+        "sk": {"S": last_message_at},
+        "message_group_uuid": {"S": message_group_uuid},
+        "message": {"S": message},
+        "user_uuid": {"S": other_user_uuid},
+        "user_display_name": {"S": other_user_display_name},
+        "user_handle": {"S": other_user_handle},
+    }
+
+    response = client.put_item(TableName=TABLE_NAME, Item=record)
+    print(response)
+
+
+def get_users():
+    sql = "SELECT uuid::text, email, display_name, handle FROM users ORDER BY email LIMIT 2"
+    with pool.connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(sql)
+            results = cursor.fetchall()
+    return results
+
+
+if len(sys.argv) == 2 and sys.argv[1] == "prod":
+    attrs = {}
+else:
+    attrs = {"endpoint_url": "http://localhost:8000"}
+ddb_client = boto3.client("dynamodb", **attrs)
+
+users = get_users()
+
+now = datetime.now(timezone.utc).astimezone()
+
+create_message_group(
+    ddb_client,
+    MESSAGE_GROUP_UUID,
+    my_user_uuid=users[0]["uuid"],
+    last_message_at=now.isoformat(),
+    message="dump message",
+    other_user_uuid=users[1]["uuid"],
+    other_user_display_name=users[1]["display_name"],
+    other_user_handle=users[1]["handle"],
+)
+
+create_message_group(
+    ddb_client,
+    MESSAGE_GROUP_UUID,
+    my_user_uuid=users[1]["uuid"],
+    last_message_at=now.isoformat(),
+    message="dump message",
+    other_user_uuid=users[0]["uuid"],
+    other_user_display_name=users[0]["display_name"],
+    other_user_handle=users[0]["handle"],
+)
+
+for i, line in enumerate(get_conversations()):
+    if line.startswith("Person 1: "):
+        user = users[0]
+    elif line.startswith("Person 2: "):
+        user = users[1]
+    else:
+        raise (f"Unknown user in line '{line}'")
+    message = line[len("Person X: ") :]
+    created_at = (now + timedelta(minutes=i)).isoformat()
+    create_message(
+        ddb_client,
+        MESSAGE_GROUP_UUID,
+        created_at,
+        message,
+        my_user_uuid=user["uuid"],
+        my_user_display_name=user["display_name"],
+        my_user_handle=user["handle"],
+    )
+    # print(line)
+    # print(message)
+    # exit()
+
+
+# response = ddb_client.create_table()

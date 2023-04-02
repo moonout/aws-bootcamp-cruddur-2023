@@ -20,3 +20,5 @@ cognitojwt
 psycopg[pool]
 psycopg[binary]
 
+
+boto3
