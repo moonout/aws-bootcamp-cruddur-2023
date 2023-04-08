@@ -13,7 +13,9 @@ services:
       AWS_COGNITO_REGION: "${AWS_DEFAULT_REGION}"
       AWS_USER_POOLS_ID: "${REACT_APP_AWS_USER_POOLS_ID}"
       APP_CLIENT_ID: "${REACT_APP_CLIENT_ID}"
-      CONNECTION_URL: "${CONNECTION_URL}/${DB_NAME}"
+      CONNECTION_URL: "${CONNECTION_URL}"
+      DB_NAME: "${DB_NAME}"
+      AWS_ENDPOINT_URL: "${AWS_ENDPOINT_URL}"
     build: ./backend-flask
     ports:
       - "4567:4567"

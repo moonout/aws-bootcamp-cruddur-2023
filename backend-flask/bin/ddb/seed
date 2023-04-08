@@ -9,7 +9,7 @@ import uuid
 p = Path(__file__).parent.parent.parent
 sys.path.append(p.as_posix())
 
-from lib.db import pool
+from lib.db import query_all
 
 MESSAGE_GROUP_UUID = "366a3727-4f86-4482-8229-979fa59b17ab"
 TABLE_NAME = "cruddur-messages"
@@ -55,17 +55,15 @@ def create_message_group(
         "user_display_name": {"S": other_user_display_name},
         "user_handle": {"S": other_user_handle},
     }
-
+    print(record)
+    exit()
     response = client.put_item(TableName=TABLE_NAME, Item=record)
     print(response)
 
 
 def get_users():
     sql = "SELECT uuid::text, email, display_name, handle FROM users ORDER BY email LIMIT 2"
-    with pool.connection() as conn:
-        with conn.cursor() as cursor:
-            cursor.execute(sql)
-            results = cursor.fetchall()
+    results = query_all(sql)
     return results
 
 
@@ -73,10 +71,10 @@ if len(sys.argv) == 2 and sys.argv[1] == "prod":
     attrs = {}
 else:
     attrs = {"endpoint_url": "http://localhost:8000"}
+
 ddb_client = boto3.client("dynamodb", **attrs)
 
 users = get_users()
-
 now = datetime.now(timezone.utc).astimezone()
 
 create_message_group(

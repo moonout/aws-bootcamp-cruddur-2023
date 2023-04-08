@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timedelta, timezone
-from lib.db import pool
+from lib.db import query_one
 import psycopg
 import traceback
 
@@ -59,21 +59,16 @@ class CreateActivity:
         now = datetime.now(timezone.utc).astimezone()
         expires_at = now + ttl_offset
         try:
-            with pool.connection() as conn:
-                with conn.cursor() as cursor:
-                    cursor.execute(
-                        sql, {"handle": user_handle, "message": message, "expires_at": expires_at.isoformat()}
-                    )
-                    conn.commit()
-                    result = cursor.fetchone()
-                    return {
-                        "uuid": result["uuid"],
-                        # "display_name": "Andrew Brown",
-                        "handle": user_handle,
-                        "message": message,
-                        "created_at": now.isoformat(),
-                        "expires_at": expires_at.isoformat(),
-                    }, None
+            result = query_one(sql, {"handle": user_handle, "message": message, "expires_at": expires_at.isoformat()})
+            return {
+                "uuid": result["uuid"],
+                # "display_name": "Andrew Brown",
+                "handle": user_handle,
+                "message": message,
+                "created_at": now.isoformat(),
+                "expires_at": expires_at.isoformat(),
+            }, None
         except (Exception, psycopg.DatabaseError) as error:
+            print(error)
             traceback.print_exc()
             return {}, "failed to add activity"

@@ -18,6 +18,6 @@ else
     URL=$LOCAL_CONNECTION_URL
 fi
 
-psql $URL/$DB_NAME < $SCRIPT_DIR/../../db/seed.sql
+psql $URL/$DB_NAME < $SCRIPT_DIR/sql/seed.sql
 
 echo -e "Done\n"

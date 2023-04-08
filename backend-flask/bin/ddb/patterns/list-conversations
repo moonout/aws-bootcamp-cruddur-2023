@@ -1,30 +1,52 @@
 #!/usr/bin/env python
 
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 import boto3
-import json
+from pathlib import Path
+
+p = Path(__file__).parent.parent.parent.parent
+sys.path.append(p.as_posix())
+
+from lib.db import query_all
 
 MESSAGE_GROUP_UUID = "366a3727-4f86-4482-8229-979fa59b17ab"
 TABLE_NAME = "cruddur-messages"
 
+my_user_uuid = "d8a9fd83-2251-4fdf-b295-d8d718da0b7b"
 
 if len(sys.argv) == 2 and sys.argv[1] == "prod":
     attrs = {}
 else:
     attrs = {"endpoint_url": "http://localhost:8000"}
-ddb_client = boto3.client("dynamodb", **attrs)
 
-my_user_uuid = "136457e5-57a7-4cd5-9bf3-1fbaf1690cf6"
+ddb_client = boto3.client("dynamodb", **attrs)
+year = str(datetime.now().year)
+
 query_params = {
     "TableName": TABLE_NAME,
-    "KeyConditionExpression": "pk = :pkey",
-    "ExpressionAttributeValues": {":pkey": {"S": f"GRP#{my_user_uuid}"}},
-    "ReturnConsumedCapacity": "TOTAL",
+    "KeyConditionExpression": "pk = :pk AND begins_with(sk,:year)",
+    "ScanIndexForward": False,
+    "Limit": 20,
+    "ExpressionAttributeValues": {":year": {"S": year}, ":pk": {"S": f"GRP#{my_user_uuid}"}},
 }
+print("query-params:", query_params)
+print(query_params)
 
+# query the table
 response = ddb_client.query(**query_params)
+items = response["Items"]
 
-print(json.dumps(response["ConsumedCapacity"], sort_keys=True, indent=2))
-
-print(json.dumps(response["Items"], sort_keys=True, indent=2))
+results = []
+for item in items:
+    last_sent_at = item["sk"]["S"]
+    results.append(
+        {
+            "uuid": item["message_group_uuid"]["S"],
+            "display_name": item["user_display_name"]["S"],
+            "handle": item["user_handle"]["S"],
+            "message": item["message"]["S"],
+            "created_at": last_sent_at,
+        }
+    )
+print(results)

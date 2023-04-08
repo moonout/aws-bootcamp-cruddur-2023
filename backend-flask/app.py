@@ -15,6 +15,7 @@ from services.messages import *
 from services.create_message import *
 from services.show_activity import *
 from services.notifications_activities import *
+from services.users_short import *
 
 from opentelemetry import trace
 from opentelemetry.instrumentation.flask import FlaskInstrumentor
@@ -80,18 +81,17 @@ class TokenVerification:
     def verify(self) -> Dict:
         token = self._extract_token_from_header()
         if not token or token == "null":
-            return
-        app.logger.debug("TOKEN")
-        app.logger.debug(token)
+            app.logger.error("No TOKEN")
+            return None
         try:
             verified_claims = cognitojwt.decode(
                 token, self.REGION, self.USER_POOL_ID, self.APP_CLIENT_ID, testmode=False
             )
         except cognitojwt.exceptions.CognitoJWTException:
             app.logger.debug("TOKEN expired")
-            return {}
-        app.logger.debug("Verified Claims")
-        app.logger.debug(verified_claims)
+            return None
+        app.logger.debug("TOKEN confirmed")
+        return verified_claims
 
 
 token_verifier = TokenVerification(app)
@@ -99,20 +99,23 @@ token_verifier = TokenVerification(app)
 
 @app.route("/api/message_groups", methods=["GET"])
 def data_message_groups():
-    user_handle = "moon"
-    model = MessageGroups.run(user_handle=user_handle)
+    claims = token_verifier.verify()
+    if not claims:
+        return {"errors": "Not logged in", "data": None}, 401
+
+    model = MessageGroups().run(cognito_user_id=claims["sub"])
     if model["errors"] is not None:
         return model["errors"], 422
-    else:
-        return model["data"], 200
+    return model["data"], 200
 
 
-@app.route("/api/messages/@<string:handle>", methods=["GET"])
-def data_messages(handle):
-    user_sender_handle = "moon"
-    user_receiver_handle = request.args.get("user_receiver_handle")
+@app.route("/api/messages/<string:message_group_uuid>", methods=["GET"])
+def data_messages(message_group_uuid):
+    claims = token_verifier.verify()
+    if not claims:
+        return {"errors": "Not logged in", "data": None}, 401
 
-    model = Messages.run(user_sender_handle=user_sender_handle, user_receiver_handle=user_receiver_handle)
+    model = Messages().run(cognito_user_id=claims["sub"], message_group_uuid=message_group_uuid)
     if model["errors"] is not None:
         return model["errors"], 422
     return model["data"], 200
@@ -121,13 +124,20 @@ def data_messages(handle):
 @app.route("/api/messages", methods=["POST", "OPTIONS"])
 @cross_origin()
 def data_create_message():
-    user_sender_handle = "moon"
-    user_receiver_handle = request.json["user_receiver_handle"]
-    message = request.json["message"]
+    claims = token_verifier.verify()
+    if not claims:
+        return {"errors": "Not logged in", "data": None}, 401
+    message = request.json.get("message")
+    user_receiver_handle = request.json.get("handle")
+    message_group_uuid = request.json.get("message_group_uuid")
 
-    model = CreateMessage.run(
-        message=message, user_sender_handle=user_sender_handle, user_receiver_handle=user_receiver_handle
+    model = CreateMessage().run(
+        message=message,
+        cognito_user_id=claims["sub"],
+        user_receiver_handle=user_receiver_handle,
+        message_group_uuid=message_group_uuid,
     )
+
     if model["errors"] is not None:
         return model["errors"], 422
     return model["data"], 200
@@ -138,9 +148,10 @@ def data_home():
     claims = token_verifier.verify()
     if claims:
         app.logger.debug("verified token")
+        data = HomeActivities().run(cognito_user_id=claims["sub"])
     else:
         app.logger.debug("unverified token")
-    data = HomeActivities().run()
+        data = HomeActivities().run()
     return data, 200
 
 
@@ -195,6 +206,12 @@ def data_activities_reply(activity_uuid):
     if model["errors"] is not None:
         return model["errors"], 422
     return model["data"], 200
+
+
+@app.route("/api/users/@<string:handle>/short", methods=["GET"])
+def data_users_short(handle):
+    data = UsersShort().run(handle)
+    return data, 200
 
 
 if __name__ == "__main__":

@@ -1,24 +1,20 @@
-from datetime import datetime, timedelta, timezone
+from lib.ddb import Ddb
+from lib.db import query_one
 
 
 class MessageGroups:
-    def run(user_handle):
+    @staticmethod
+    def run(cognito_user_id):
         model = {"errors": None, "data": None}
 
-        now = datetime.now(timezone.utc).astimezone()
-        results = [
-            {
-                "uuid": "24b95582-9e7b-4e0a-9ad1-639773ab7552",
-                "display_name": "Andrew Brown",
-                "handle": "andrewbrown",
-                "created_at": now.isoformat(),
-            },
-            {
-                "uuid": "417c360e-c4e6-4fce-873b-d2d71469b4ac",
-                "display_name": "Worf",
-                "handle": "worf",
-                "created_at": now.isoformat(),
-            },
-        ]
-        model["data"] = results
+        sql = """
+            SELECT users.uuid::text
+            FROM public.users
+            WHERE users.cognito_user_id = %(cognito_user_id)s
+            LIMIT 1
+        """
+        my_user_uuid = query_one(sql, {"cognito_user_id": cognito_user_id})
+
+        data = Ddb().list_message_groups(my_user_uuid["uuid"])
+        model["data"] = data
         return model

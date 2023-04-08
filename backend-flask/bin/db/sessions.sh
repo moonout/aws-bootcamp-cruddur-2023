@@ -18,4 +18,4 @@ psql $URL -c "select pid as process_id, \
        client_addr, \
        application_name as app,\
        state \
-from pg_stat_activity;"
+from pg_stat_activity WHERE pg_stat_activity.datname='$DB_NAME';"

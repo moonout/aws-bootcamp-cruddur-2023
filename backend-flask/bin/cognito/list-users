@@ -1,0 +1,22 @@
+#!/usr/bin/env python3
+
+import boto3
+import os
+from pprint import pprint
+
+
+userpool_id = os.getenv("REACT_APP_AWS_USER_POOLS_ID")
+client = boto3.client("cognito-idp")
+params = {"UserPoolId": userpool_id, "AttributesToGet": ["preferred_username", "sub"]}
+response = client.list_users(**params)
+users = response["Users"]
+
+# print(json.dumps(users, sort_keys=True, indent=2, default=str))
+
+list_users = []
+for user in users:
+    attrs = user["Attributes"]
+    dict_users = {attr["Name"]: attr["Value"] for attr in attrs}
+    list_users.append(dict_users)
+
+pprint(list_users)

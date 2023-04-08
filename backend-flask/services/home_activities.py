@@ -1,13 +1,13 @@
 from datetime import datetime, timezone
 from opentelemetry import trace
-from lib.db import pool
+from lib.db import query_all
 
 tracer = trace.get_tracer("home.activities")
 
 
 class HomeActivities:
     @staticmethod
-    def run():
+    def run(cognito_user_id=None):
         with tracer.start_as_current_span("mock-data"):
             now = datetime.now(timezone.utc).astimezone()
             span = trace.get_current_span()
@@ -26,12 +26,9 @@ class HomeActivities:
                     activities.created_at
                 FROM activities
                 LEFT JOIN public.users ON users.uuid = activities.user_uuid
+                WHERE user_uuid = %(user_uuid)s
                 ORDER BY activities.created_at DESC
             """
-            with pool.connection() as conn:
-                with conn.cursor() as cursor:
-                    cursor.execute(sql)
-                    results = cursor.fetchall()
-
+            results = query_all(sql, {"user_uuid": cognito_user_id})
             span.set_attribute("app.result.len", len(results))
             return results
