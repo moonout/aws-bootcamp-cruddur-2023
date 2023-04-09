@@ -15,7 +15,7 @@ services:
       APP_CLIENT_ID: "${REACT_APP_CLIENT_ID}"
       CONNECTION_URL: "${CONNECTION_URL}"
       DB_NAME: "${DB_NAME}"
-      AWS_ENDPOINT_URL: "${AWS_ENDPOINT_URL}"
+      # AWS_ENDPOINT_URL: "${AWS_ENDPOINT_URL}"
     build: ./backend-flask
     ports:
       - "4567:4567"
