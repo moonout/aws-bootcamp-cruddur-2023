@@ -1,0 +1,32 @@
+aws iam create-role \
+  --role-name CruddurServiceExecutionRole \
+  --assume-role-policy-document file://aws/policy/service-assume-role-execution-policy.json
+
+aws iam attach-role-policy --policy-arn arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy --role-name CruddurServiceExecutionRole
+
+aws iam put-role-policy \
+  --policy-name CruddurServiceExecutionPolicy \
+  --role-name CruddurServiceExecutionRole \
+  --policy-document file://aws/policy/service-execution-policy.json
+
+aws iam create-role \
+  --role-name CruddurTaskRole \
+  --assume-role-policy-document file://aws/policy/task-assume-role-execution-policy.json
+
+aws iam put-role-policy \
+  --policy-name SSMAccessPolicy \
+  --role-name CruddurTaskRole \
+  --policy-document file://aws/policy/task-execution-policy.json
+
+aws ecs register-task-definition --cli-input-json file://aws/task_definitions/backend-flask.json
+
+aws ecs create-cluster \
+  --cluster-name cruddur \
+  --service-connect-defaults namespace=cruddur
+
+  
+aws ecs create-service --cli-input-json file://aws/ecs_services/service-backend-flask.json
+
+
+
+  

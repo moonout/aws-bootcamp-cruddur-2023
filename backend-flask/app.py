@@ -58,9 +58,6 @@ cors = CORS(
     methods="OPTIONS,GET,HEAD,POST",
 )
 
-# Rollbar
-rollbar_access_token = os.getenv("ROLLBAR_ACCESS_TOKEN")
-
 
 class TokenVerification:
     header = "Authorization"
@@ -95,6 +92,11 @@ class TokenVerification:
 
 
 token_verifier = TokenVerification(app)
+
+
+@app.route("/api/health-check")
+def health_check():
+    return {"success": True}, 200
 
 
 @app.route("/api/message_groups", methods=["GET"])

@@ -12,7 +12,7 @@ printf "${BLUE}Load seed...${NO_COLOR}\n"
 
 if [[ "$1" == "prod" ]]; then
     printf "${RED}WARNING: going to prod${NO_COLOR}\n"
-    URL=$CONNECTION_URL
+    URL=$PROD_CONNECTION_URL
 else
     printf "${CYAN}MEH: that's local${NO_COLOR}\n"
     URL=$LOCAL_CONNECTION_URL
