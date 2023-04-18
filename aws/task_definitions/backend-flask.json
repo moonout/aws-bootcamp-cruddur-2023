@@ -50,11 +50,11 @@
         },
         {
           "name": "FRONTEND_URL",
-          "value": "*"
+          "value": "https://moon-out.xyz"
         },
         {
           "name": "BACKEND_URL",
-          "value": "*"
+          "value": "https://api.moon-out.xyz"
         },
         {
           "name": "AWS_DEFAULT_REGION",
