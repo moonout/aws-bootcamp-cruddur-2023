@@ -5,7 +5,7 @@ class UsersShort:
     @staticmethod
     def run(handle):
         sql = """
-            SELECT 
+            SELECT
                 users.uuid::text,
                 users.handle,
                 users.display_name
@@ -13,5 +13,4 @@ class UsersShort:
             WHERE users.handle = %(handle)s
         """
         result = query_one(sql, {"handle": handle})
-        print(result)
         return result

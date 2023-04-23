@@ -16,7 +16,7 @@
       "healthCheck": {
         "command": [
           "CMD-SHELL",
-          "python /backend-flask/bin/flask/health-check.py"
+          "python /backend-flask/bin/health-check.py"
         ],
         "interval": 30,
         "timeout": 5,
@@ -68,11 +68,11 @@
       "secrets": [
         {
           "name": "AWS_COGNITO_USER_POOL_ID",
-          "valueFrom": "arn:aws:ssm:eu-central-1:325214296497:parameter/cruddur/backend-flask/AWS_ACCESS_KEY_ID"
+          "valueFrom": "arn:aws:ssm:eu-central-1:325214296497:parameter/cruddur/backend-flask/AWS_COGNITO_USER_POOL_ID"
         },
         {
           "name": "AWS_COGNITO_USER_POOL_CLIENT_ID",
-          "valueFrom": "arn:aws:ssm:eu-central-1:325214296497:parameter/cruddur/backend-flask/AWS_ACCESS_KEY_ID"
+          "valueFrom": "arn:aws:ssm:eu-central-1:325214296497:parameter/cruddur/backend-flask/AWS_COGNITO_USER_POOL_CLIENT_ID"
         },
         {
           "name": "AWS_ACCESS_KEY_ID",

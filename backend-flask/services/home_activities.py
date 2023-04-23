@@ -26,9 +26,9 @@ class HomeActivities:
                     activities.created_at
                 FROM activities
                 LEFT JOIN public.users ON users.uuid = activities.user_uuid
-                WHERE user_uuid = %(user_uuid)s
+                WHERE public.users.cognito_user_id = %(cognito_user_id)s
                 ORDER BY activities.created_at DESC
             """
-            results = query_all(sql, {"user_uuid": cognito_user_id})
+            results = query_all(sql, {"cognito_user_id": cognito_user_id})
             span.set_attribute("app.result.len", len(results))
             return results

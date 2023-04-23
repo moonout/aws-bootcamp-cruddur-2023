@@ -5,12 +5,8 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
-if [ -z "$2" ]; then
-    echo "No CONTAINER_NAME argument supplied"
-    exit 1
-fi
 TASK_ID=$1
-CONTAINER_NAME=$2
+CONTAINER_NAME="frontend-react-js"
 
 
 aws ecs execute-command  \

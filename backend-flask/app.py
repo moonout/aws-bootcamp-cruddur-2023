@@ -17,31 +17,39 @@ from services.show_activity import *
 from services.notifications_activities import *
 from services.users_short import *
 
-from opentelemetry import trace
-from opentelemetry.instrumentation.flask import FlaskInstrumentor
-from opentelemetry.instrumentation.requests import RequestsInstrumentor
-from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor, SimpleSpanProcessor, ConsoleSpanExporter
-
 import cognitojwt
 
-# Initialize tracing and an exporter that can send data to Honeycomb
-provider = TracerProvider()
+# from opentelemetry import trace
+# from opentelemetry.instrumentation.flask import FlaskInstrumentor
+# from opentelemetry.instrumentation.requests import RequestsInstrumentor
+# from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+# from opentelemetry.sdk.trace import TracerProvider
+# from opentelemetry.sdk.trace.export import BatchSpanProcessor, SimpleSpanProcessor, ConsoleSpanExporter
 
-processor = BatchSpanProcessor(OTLPSpanExporter())
-provider.add_span_processor(processor)
 
-# simple_processor = SimpleSpanProcessor(ConsoleSpanExporter())
-# provider.add_span_processor(simple_processor)
+# Rollbar ------
+from time import strftime
+import os
+import rollbar
+import rollbar.contrib.flask
+from flask import got_request_exception
 
-trace.set_tracer_provider(provider)
-tracer = trace.get_tracer(__name__)
+# # Initialize tracing and an exporter that can send data to Honeycomb
+# provider = TracerProvider()
+
+# processor = BatchSpanProcessor(OTLPSpanExporter())
+# provider.add_span_processor(processor)
+
+# # simple_processor = SimpleSpanProcessor(ConsoleSpanExporter())
+# # provider.add_span_processor(simple_processor)
+
+# trace.set_tracer_provider(provider)
+# tracer = trace.get_tracer(__name__)
 
 # Initialize automatic instrumentation with Flask
 app = Flask(__name__)
-FlaskInstrumentor().instrument_app(app)
-RequestsInstrumentor().instrument()
+# FlaskInstrumentor().instrument_app(app)
+# RequestsInstrumentor().instrument()
 
 
 frontend = os.getenv("FRONTEND_URL")
@@ -64,9 +72,9 @@ class TokenVerification:
 
     def __init__(self, app):
         self.app = app
-        self.REGION = os.getenv("AWS_COGNITO_REGION")
-        self.USER_POOL_ID = os.getenv("AWS_USER_POOLS_ID")
-        self.APP_CLIENT_ID = os.getenv("APP_CLIENT_ID")
+        self.REGION = os.getenv("AWS_DEFAULT_REGION")
+        self.AWS_COGNITO_USER_POOL_ID = os.getenv("AWS_COGNITO_USER_POOL_ID")
+        self.AWS_COGNITO_USER_POOL_CLIENT_ID = os.getenv("AWS_COGNITO_USER_POOL_CLIENT_ID")
 
     def _extract_token_from_header(self):
         auth_header = request.headers.get("Authorization")
@@ -82,7 +90,7 @@ class TokenVerification:
             return None
         try:
             verified_claims = cognitojwt.decode(
-                token, self.REGION, self.USER_POOL_ID, self.APP_CLIENT_ID, testmode=False
+                token, self.REGION, self.AWS_COGNITO_USER_POOL_ID, self.AWS_COGNITO_USER_POOL_CLIENT_ID, testmode=False
             )
         except cognitojwt.exceptions.CognitoJWTException:
             app.logger.debug("TOKEN expired")
@@ -92,6 +100,27 @@ class TokenVerification:
 
 
 token_verifier = TokenVerification(app)
+
+# Rollbar ----------
+rollbar_access_token = os.getenv("ROLLBAR_ACCESS_TOKEN")
+
+
+@app.before_first_request
+def init_rollbar():
+    """init rollbar module"""
+    rollbar.init(
+        # access token
+        rollbar_access_token,
+        # environment name
+        "production",
+        # server root directory, makes tracebacks prettier
+        root=os.path.dirname(os.path.realpath(__file__)),
+        # flask already sets up logging
+        allow_logging_basic_config=False,
+    )
+
+    # send exceptions from `app` to rollbar, using flask's signal system.
+    got_request_exception.connect(rollbar.contrib.flask.report_exception, app)
 
 
 @app.route("/api/health-check")
@@ -213,8 +242,10 @@ def data_activities_reply(activity_uuid):
 @app.route("/api/users/@<string:handle>/short", methods=["GET"])
 def data_users_short(handle):
     data = UsersShort().run(handle)
+    if not data:
+        return f"User {handle} not found", 404
     return data, 200
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()

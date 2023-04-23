@@ -14,7 +14,6 @@ class MessageGroups:
             LIMIT 1
         """
         my_user_uuid = query_one(sql, {"cognito_user_id": cognito_user_id})
-
         data = Ddb().list_message_groups(my_user_uuid["uuid"])
         model["data"] = data
         return model
