@@ -1,7 +1,5 @@
 docker/**/*
-.env
-.env.save
-..env.swp
 .env.*
+*.env
 frontend-react-js/build/*
 
