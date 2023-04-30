@@ -2,7 +2,7 @@ from flask import Flask
 from flask import request
 from flask_cors import CORS, cross_origin
 import os
-from typing import Dict
+
 
 # these imports are ugly as fuck
 from services.home_activities import *
@@ -17,7 +17,9 @@ from services.show_activity import *
 from services.notifications_activities import *
 from services.users_short import *
 
-import cognitojwt
+from lib.token import TokenVerification
+
+from lib.xray import init_xray
 
 # from opentelemetry import trace
 # from opentelemetry.instrumentation.flask import FlaskInstrumentor
@@ -27,12 +29,7 @@ import cognitojwt
 # from opentelemetry.sdk.trace.export import BatchSpanProcessor, SimpleSpanProcessor, ConsoleSpanExporter
 
 
-# Rollbar ------
-from time import strftime
-import os
-import rollbar
-import rollbar.contrib.flask
-from flask import got_request_exception
+from lib.rollbar import init_rollbar
 
 # # Initialize tracing and an exporter that can send data to Honeycomb
 # provider = TracerProvider()
@@ -52,9 +49,9 @@ app = Flask(__name__)
 # RequestsInstrumentor().instrument()
 
 
-frontend = os.getenv("FRONTEND_URL")
-backend = os.getenv("BACKEND_URL")
-origins = [frontend, backend]
+frontend_url = os.getenv("FRONTEND_URL")
+backend_url = os.getenv("BACKEND_URL")
+origins = [frontend_url, backend_url]
 
 cors = CORS(
     app,
@@ -67,60 +64,13 @@ cors = CORS(
 )
 
 
-class TokenVerification:
-    header = "Authorization"
-
-    def __init__(self, app):
-        self.app = app
-        self.REGION = os.getenv("AWS_DEFAULT_REGION")
-        self.AWS_COGNITO_USER_POOL_ID = os.getenv("AWS_COGNITO_USER_POOL_ID")
-        self.AWS_COGNITO_USER_POOL_CLIENT_ID = os.getenv("AWS_COGNITO_USER_POOL_CLIENT_ID")
-
-    def _extract_token_from_header(self):
-        auth_header = request.headers.get("Authorization")
-        if not auth_header:
-            return None
-        _, token = auth_header.split(" ")
-        return token
-
-    def verify(self) -> Dict:
-        token = self._extract_token_from_header()
-        if not token or token == "null":
-            app.logger.error("No TOKEN")
-            return None
-        try:
-            verified_claims = cognitojwt.decode(
-                token, self.REGION, self.AWS_COGNITO_USER_POOL_ID, self.AWS_COGNITO_USER_POOL_CLIENT_ID, testmode=False
-            )
-        except cognitojwt.exceptions.CognitoJWTException:
-            app.logger.debug("TOKEN expired")
-            return None
-        app.logger.debug("TOKEN confirmed")
-        return verified_claims
-
+# X-RAY ----------
+init_xray(app)
 
 token_verifier = TokenVerification(app)
 
 # Rollbar ----------
-rollbar_access_token = os.getenv("ROLLBAR_ACCESS_TOKEN")
-
-
-@app.before_first_request
-def init_rollbar():
-    """init rollbar module"""
-    rollbar.init(
-        # access token
-        rollbar_access_token,
-        # environment name
-        "production",
-        # server root directory, makes tracebacks prettier
-        root=os.path.dirname(os.path.realpath(__file__)),
-        # flask already sets up logging
-        allow_logging_basic_config=False,
-    )
-
-    # send exceptions from `app` to rollbar, using flask's signal system.
-    got_request_exception.connect(rollbar.contrib.flask.report_exception, app)
+init_rollbar(app)
 
 
 @app.route("/api/health-check")

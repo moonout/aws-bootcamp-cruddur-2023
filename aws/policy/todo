@@ -18,6 +18,8 @@ aws iam put-role-policy \
   --role-name CruddurTaskRole \
   --policy-document file://aws/policy/task-execution-policy.json
 
+aws iam attach-role-policy --policy-arn arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess --role-name CruddurTaskRole
+
 aws ecs create-cluster \
   --cluster-name cruddur \
   --service-connect-defaults namespace=cruddur
