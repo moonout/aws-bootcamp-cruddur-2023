@@ -2,7 +2,8 @@ aws iam create-role \
   --role-name CruddurServiceExecutionRole \
   --assume-role-policy-document file://aws/policy/service-assume-role-execution-policy.json
 
-aws iam attach-role-policy --policy-arn arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy --role-name CruddurServiceExecutionRole
+aws iam attach-role-policy \
+  --policy-arn arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy --role-name CruddurServiceExecutionRole
 
 aws iam put-role-policy \
   --policy-name CruddurServiceExecutionPolicy \
