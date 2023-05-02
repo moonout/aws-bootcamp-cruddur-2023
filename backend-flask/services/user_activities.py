@@ -5,7 +5,7 @@ class UserActivities:
     def run(user_handle):
         model = {"errors": None, "data": None}
 
-        now = datetime.now(timezone.utc).astimezone()
+        now = datetime.now()
 
         if user_handle == None or len(user_handle) < 1:
             model["errors"] = ["blank_user_handle"]

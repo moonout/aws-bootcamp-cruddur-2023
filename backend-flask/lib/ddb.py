@@ -1,5 +1,5 @@
 import boto3
-from datetime import datetime, timezone
+from datetime import datetime
 import uuid
 import os
 import botocore.exceptions
@@ -17,16 +17,16 @@ class Ddb:
         self.table_name = "cruddur-messages"
 
     def list_message_groups(self, my_user_uuid):
-        year = str(datetime.now().year)
+        # year = str(datetime.now().year)
         query_params = {
             "TableName": self.table_name,
-            "KeyConditionExpression": "pk = :pk AND begins_with(sk,:year)",
-            # "KeyConditionExpression": "pk = :pk",
+            # "KeyConditionExpression": "pk = :pk AND begins_with(sk,:year)",
+            "KeyConditionExpression": "pk = :pk",
             "ScanIndexForward": False,
             "Limit": 20,
             "ExpressionAttributeValues": {
                 ":pk": {"S": f"GRP#{my_user_uuid}"},
-                ":year": {"S": year},
+                # ":year": {"S": year},
             },
         }
         # query the table
@@ -51,12 +51,13 @@ class Ddb:
         year = str(datetime.now().year)
         query_params = {
             "TableName": self.table_name,
-            "KeyConditionExpression": "pk = :pk AND begins_with(sk,:year)",
+            # "KeyConditionExpression": "pk = :pk AND begins_with(sk,:year)",
+            "KeyConditionExpression": "pk = :pk",
             "ScanIndexForward": False,
             "Limit": 20,
             "ExpressionAttributeValues": {
                 ":pk": {"S": f"MSG#{message_group_uuid}"},
-                ":year": {"S": year},
+                # ":year": {"S": year},
             },
         }
 
@@ -78,7 +79,7 @@ class Ddb:
         return results
 
     def create_message(self, message_group_uuid, message, my_user_uuid, my_user_display_name, my_user_handle):
-        now = datetime.now(timezone.utc).astimezone().isoformat()
+        now = datetime.now().isoformat()
 
         message_uuid = str(uuid.uuid4())
 
@@ -91,11 +92,11 @@ class Ddb:
             "user_display_name": {"S": my_user_display_name},
             "user_handle": {"S": my_user_handle},
         }
-        # insert the record into the table
 
+        # insert the record into the table
         response = self.ddb_client.put_item(TableName=self.table_name, Item=record)
-        # print the response
         print(response)
+
         return {
             "message_group_uuid": message_group_uuid,
             "uuid": my_user_uuid,
@@ -106,10 +107,8 @@ class Ddb:
         }
 
     def create_user_message_group(
-        self, message_group_uuid, user_uuid, other_user_uuid, other_display_name, other_handle, message, now
+        self, message_group_uuid, user_uuid, other_user_uuid, other_display_name, other_handle, message, last_message_at
     ):
-        last_message_at = now
-
         message_group = {
             "pk": {"S": f"GRP#{user_uuid}"},
             "sk": {"S": last_message_at},
@@ -133,38 +132,16 @@ class Ddb:
     ):
         print("== create_message_group.1")
 
-        # message_group_uuid = str(uuid.uuid4())
         message_uuid = str(uuid.uuid4())
-        now = datetime.now(timezone.utc).astimezone().isoformat()
+        now = datetime.now().isoformat()
         message_group_uuid = str(uuid.uuid4())
 
+        print("== create_message_group.2")
         my_message_group = self.create_user_message_group(
             message_group_uuid, my_user_uuid, other_user_uuid, other_user_display_name, other_user_handle, message, now
         )
-        # last_message_at = now
-        #
-        print("== create_message_group.2")
-
-        # my_message_group = {
-        #     "pk": {"S": f"GRP#{my_user_uuid}"},
-        #     "sk": {"S": last_message_at},
-        #     "message_group_uuid": {"S": message_group_uuid},
-        #     "message": {"S": message},
-        #     "user_uuid": {"S": other_user_uuid},
-        #     "user_display_name": {"S": other_user_display_name},
-        #     "user_handle": {"S": other_user_handle},
-        # }
 
         print("== create_message_group.3")
-        # other_message_group = {
-        #     "pk": {"S": f"GRP#{other_user_uuid}"},
-        #     "sk": {"S": last_message_at},
-        #     "message_group_uuid": {"S": message_group_uuid},
-        #     "message": {"S": message},
-        #     "user_uuid": {"S": my_user_uuid},
-        #     "user_display_name": {"S": my_user_display_name},
-        #     "user_handle": {"S": my_user_handle},
-        # }
         other_message_group = self.create_user_message_group(
             message_group_uuid, other_user_uuid, my_user_uuid, my_user_display_name, my_user_handle, message, now
         )
@@ -180,9 +157,11 @@ class Ddb:
             "user_display_name": {"S": my_user_display_name},
             "user_handle": {"S": my_user_handle},
         }
+
         print(my_message_group)
         print(other_message_group)
         print(message_item)
+
         items = {
             self.table_name: [
                 {"PutRequest": {"Item": my_message_group}},
@@ -195,7 +174,7 @@ class Ddb:
             print("== create_message_group.try")
             # Begin the transaction
             response = self.ddb_client.batch_write_item(RequestItems=items)
-            # return {"message_group_uuid": message_group_uuid}
+            print("response create batch", response)
             return {
                 "message_group_uuid": message_group_uuid,
                 "uuid": my_user_uuid,

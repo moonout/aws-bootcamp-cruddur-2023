@@ -56,10 +56,7 @@ def create_message_group(
         "user_display_name": {"S": other_user_display_name},
         "user_handle": {"S": other_user_handle},
     }
-    print(record)
-    exit()
     response = client.put_item(TableName=TABLE_NAME, Item=record)
-    print(response)
 
 
 def get_users():
@@ -76,7 +73,7 @@ else:
 ddb_client = boto3.client("dynamodb", **attrs)
 
 users = get_users()
-now = datetime.now(timezone.utc).astimezone()
+now = datetime.now()
 
 create_message_group(
     ddb_client,
@@ -108,7 +105,7 @@ for i, line in enumerate(get_conversations()):
     else:
         raise (f"Unknown user in line '{line}'")
     message = line[len("Person X: ") :]
-    created_at = (now + timedelta(minutes=i)).isoformat()
+    created_at = (now - timedelta(days=1) + timedelta(minutes=i)).isoformat()
     create_message(
         ddb_client,
         MESSAGE_GROUP_UUID,

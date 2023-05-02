@@ -25,10 +25,12 @@ year = str(datetime.now().year)
 
 query_params = {
     "TableName": TABLE_NAME,
-    "KeyConditionExpression": "pk = :pk AND begins_with(sk,:year)",
+    # "KeyConditionExpression": "pk = :pk AND begins_with(sk,:year)",
+    "KeyConditionExpression": "pk = :pk",
     "ScanIndexForward": False,
     "Limit": 20,
-    "ExpressionAttributeValues": {":year": {"S": year}, ":pk": {"S": f"GRP#{my_user_uuid}"}},
+    # "ExpressionAttributeValues": {":year": {"S": year}, ":pk": {"S": f"GRP#{my_user_uuid}"}},
+    "ExpressionAttributeValues": {":pk": {"S": f"GRP#{my_user_uuid}"}},
 }
 print("query-params:", query_params)
 print(query_params)

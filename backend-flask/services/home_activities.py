@@ -9,7 +9,7 @@ class HomeActivities:
     @staticmethod
     def run(cognito_user_id=None):
         with tracer.start_as_current_span("mock-data"):
-            now = datetime.now(timezone.utc).astimezone()
+            now = datetime.now()
             span = trace.get_current_span()
             span.set_attribute("app.now", now.isoformat())
             sql = """

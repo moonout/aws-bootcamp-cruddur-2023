@@ -5,7 +5,7 @@ class SearchActivities:
     def run(search_term):
         model = {"errors": None, "data": None}
 
-        now = datetime.now(timezone.utc).astimezone()
+        now = datetime.now()
 
         if search_term == None or len(search_term) < 1:
             model["errors"] = ["search_term_blank"]

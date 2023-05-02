@@ -56,7 +56,7 @@ class CreateActivity:
             )
             RETURNING uuid
         """
-        now = datetime.now(timezone.utc).astimezone()
+        now = datetime.now()
         expires_at = now + ttl_offset
         try:
             result = query_one(sql, {"handle": user_handle, "message": message, "expires_at": expires_at.isoformat()})

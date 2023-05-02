@@ -26,10 +26,12 @@ year = str(datetime.now().year)
 
 query_params = {
     "TableName": TABLE_NAME,
-    "KeyConditionExpression": "pk = :pk AND begins_with(sk, :year)",
+    # "KeyConditionExpression": "pk = :pk AND begins_with(sk, :year)",
+    "KeyConditionExpression": "pk = :pk",
     "ScanIndexForward": False,
     "Limit": 50,
-    "ExpressionAttributeValues": {":pk": {"S": f"MSG#{MESSAGE_GROUP_UUID}"}, ":year": {"S": year}},
+    # "ExpressionAttributeValues": {":pk": {"S": f"MSG#{MESSAGE_GROUP_UUID}"}, ":year": {"S": year}},
+    "ExpressionAttributeValues": {":pk": {"S": f"MSG#{MESSAGE_GROUP_UUID}"}},
     "ReturnConsumedCapacity": "TOTAL",
 }
 

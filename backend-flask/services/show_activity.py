@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 
 class ShowActivity:
     def run(activity_uuid):
-        now = datetime.now(timezone.utc).astimezone()
+        now = datetime.now()
         results = [
             {
                 "uuid": "68f126b0-1ceb-4a33-88be-d90fa7109eee",
